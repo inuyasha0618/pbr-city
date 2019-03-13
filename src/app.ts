@@ -68,7 +68,8 @@ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 const myHDR = new HDRImage();
 // myHDR.src = './hdr/RedBlueStudio.hdr';
-myHDR.src = './hdr/Mans_Outside_2k.hdr';
+// myHDR.src = './hdr/Mans_Outside_2k.hdr';
+myHDR.src = './hdr/Mans_Outside_1080.hdr';
 // myHDR.src = './hdr/Milkyway_small.hdr';
 // myHDR.src = './hdr/Milkyway_small.hdr';
 
