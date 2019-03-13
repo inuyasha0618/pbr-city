@@ -274,7 +274,7 @@ myHDR.onload = function() {
         // mat4.translate(model, model, [1.0, 1.0, 1.0]);
         // mat4.scale(model, model, [5.0, 5.0, 5.0])
         const metallic: number = 0.9;
-        const roughness: number = 0.05;
+        const roughness: number = 0.20;
         // const metallic: number = 0.2;
         // const roughness: number = 0.35;
         pbrShader.uniform1f('metallic', metallic);
