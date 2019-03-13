@@ -1,4 +1,5 @@
-import { loadObjFile } from '../utils/index';
+import ObjLoader from './ObjLoader';
+import { fetchObjFile } from '../utils/index';
 
 let dragonPosDataArr: Float32Array;
 let dragonNormalDataArr: Float32Array;

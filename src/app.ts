@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'gl-matrix'
 import RenderLooper from 'render-looper';
-import { ShaderProgram, drawCube, drawCubeSmooth, OrbitCamera, drawQuad, drawQuadWithTex, renderSphere } from './gl-helpers/index';
+import { ShaderProgram, drawCube, drawCubeSmooth, OrbitCamera, drawQuad, drawQuadWithTex, renderSphere, ObjMesh } from './gl-helpers/index';
 import { getContext, resizeCvs2Screen, getRadian } from './utils/index';
 import background_vs from './shaders/background_vs';
 import background_fs from './shaders/background_fs';
@@ -66,12 +66,12 @@ gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
 
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
+const dragonMesh: ObjMesh = new ObjMesh(gl, './models/TheStanfordDragon.obj', []);
+const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
+
 const myHDR = new HDRImage();
-// myHDR.src = './hdr/RedBlueStudio.hdr';
-// myHDR.src = './hdr/Mans_Outside_2k.hdr';
-myHDR.src = './hdr/Mans_Outside_1080.hdr';
-// myHDR.src = './hdr/Milkyway_small.hdr';
-// myHDR.src = './hdr/Milkyway_small.hdr';
+// myHDR.src = './hdr/Mans_Outside_1080.hdr';
+myHDR.src = './hdr/Milkyway_small222.hdr';
 
 myHDR.onload = function() {
     const hdrTexture: WebGLTexture = gl.createTexture();
@@ -255,8 +255,8 @@ myHDR.onload = function() {
         gl.bindTexture(gl.TEXTURE_2D, brdfLUTTexture);
 
         const model: mat4 = mat4.create();
-        mat4.translate(model, model, [1.0, 1.0, 1.0]);
-        mat4.scale(model, model, [5.0, 5.0, 5.0])
+        // mat4.translate(model, model, [1.0, 1.0, 1.0]);
+        // mat4.scale(model, model, [5.0, 5.0, 5.0])
         const metallic: number = 0.9;
         const roughness: number = 0.05;
         // const metallic: number = 0.2;
@@ -266,8 +266,12 @@ myHDR.onload = function() {
         pbrShader.uniformMatrix4fv('model', model);
         // drawCubeSmooth(gl);
         // drawCube(gl);
-        renderSphere(gl);
+        // renderSphere(gl);
+        // mat4.translate(model, model, [5, 0, 0]);
+        // pbrShader.uniformMatrix4fv('model', model);
+        // dragonMesh.draw();
 
+        lujiazui.draw();
 
         backgroundShader.use();
         backgroundShader.uniformMatrix4fv('projection', perspective);
