@@ -11,7 +11,10 @@ import equirectangular_to_cubemap_fs from './shaders/equirectangular_to_cubemap_
 import irradiance_convolution_fs from './shaders/irradiance_convolution_fs';
 import pbr_vs from './shaders/pbr_vs';
 import pbr_fs from './shaders/pbr_fs';
+import pbr_instanced_vs from './shaders/pbr_instanced_vs';
 import prefilter_fs from './shaders/prefilter_fs';
+import river from './river';
+
 
 const lightPositions: Array<Float32Array> = [
     new Float32Array([-10.0, 10.0, 10.0]),
@@ -35,6 +38,7 @@ gl.depthFunc(gl.LEQUAL)
 gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
 const pbrShader: ShaderProgram = new ShaderProgram(gl, pbr_vs, pbr_fs, 'pbrShader');
+const pbrInstancedShader: ShaderProgram = new ShaderProgram(gl, pbr_instanced_vs, pbr_fs, 'pbrShader');
 const equirectangularToCubemapShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, equirectangular_to_cubemap_fs, 'equirectangularToCubemapShader');
 const irradianceShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, irradiance_convolution_fs, 'irradianceShader');
 const prefilterShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, prefilter_fs, 'prefilterShader');
@@ -51,6 +55,18 @@ pbrShader.uniform1f('ao', 1.0);
 for (let i = 0, size = lightPositions.length; i < size; i++) {
     pbrShader.uniform3fv(`lightPositions[${i}]`, lightPositions[i]);
     pbrShader.uniform3fv(`lightColors[${i}]`, lightColors[i]);
+}
+
+pbrInstancedShader.use();
+pbrInstancedShader.uniform1i('irradianceMap', 0);
+pbrInstancedShader.uniform1i('prefilterMap', 1);
+pbrInstancedShader.uniform1i('brdfLUT', 2);
+pbrInstancedShader.uniform3fv('albedo', new Float32Array([0.5, 0.0, 0.0]));
+pbrInstancedShader.uniform1f('ao', 1.0);
+
+for (let i = 0, size = lightPositions.length; i < size; i++) {
+    pbrInstancedShader.uniform3fv(`lightPositions[${i}]`, lightPositions[i]);
+    pbrInstancedShader.uniform3fv(`lightColors[${i}]`, lightColors[i]);
 }
 
 backgroundShader.use();
@@ -273,6 +289,14 @@ myHDR.onload = function() {
 
         lujiazui.draw();
 
+        pbrInstancedShader.use();
+        pbrInstancedShader.uniformMatrix4fv('view', view);
+        pbrInstancedShader.uniformMatrix4fv('projection', perspective);
+        pbrInstancedShader.uniform3fv('camPos', camPos);
+        pbrInstancedShader.uniform1f('metallic', metallic);
+        pbrInstancedShader.uniform1f('roughness', roughness);
+        drawFakeBuildings();
+
         backgroundShader.use();
         backgroundShader.uniformMatrix4fv('projection', perspective);
         backgroundShader.uniformMatrix4fv('view', view);
@@ -285,5 +309,139 @@ myHDR.onload = function() {
     const looper = new RenderLooper(drawCB).start();
 }
 
+const gridCnts: number = 60;
+const gridSize: number = 1;
+const buildingPoses: Array<mat4> = [];
+function getRandom(start: number, end: number): number {
+    return start + (end - start) * Math.random();
+}
 
+function generateBuildingPos(gridSize: number, gridCnts: number) {
+    const halfWidth: number = gridSize * gridCnts * 0.5;
+    // 列主序！！！
+    const w2Checkerboard: mat4 = mat4.fromValues(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        -halfWidth, 0, -halfWidth, 1
+    );
+    
+    const discard: number = Math.floor(gridCnts * 0.5);
+    
+    for (let row = 0; row < gridCnts; row++) {
+        const riverPart: Array<number> = river[row + 1] || [];
+        for (let column = 0; column < gridCnts; column++) {
+            if (riverPart.length > 0 && column >= riverPart[0] - 1 && column <= riverPart[1] - 1) continue;
 
+            // if (row >= discard -2 && row <= discard && column >= discard - 2 && column <= discard) continue;
+            const localMx: mat4 = mat4.create();
+            mat4.translate(localMx, localMx, [column * gridSize + 0.5 * gridSize, 0.0, row * gridSize + 0.5 * gridSize]);
+            // mat4.rotateX(localMx, localMx, getRadian(-90));
+            // mat4.rotateY(localMx, localMx, getRadian(90 * Math.random()));
+            mat4.scale(localMx, localMx, [0.5 * gridSize, 0.5 * gridSize, 0.5 * gridSize]);
+            mat4.scale(localMx, localMx, [getRandom(0.3, 0.5), getRandom(0.5, 1.5), getRandom(0.4, 0.6)])
+            const finalModelMx: mat4 = mat4.create();
+            mat4.multiply(finalModelMx, w2Checkerboard, localMx);
+            buildingPoses.push(finalModelMx);
+        }
+    }    
+}
+
+generateBuildingPos(gridSize, gridCnts);
+
+let fakeBuildingsVAO: WebGLVertexArrayObject;
+function drawFakeBuildings(): void {
+    if (!fakeBuildingsVAO) {
+        fakeBuildingsVAO = gl.createVertexArray();
+        gl.bindVertexArray(fakeBuildingsVAO);
+        const vertexData: Float32Array = new Float32Array([
+            // back face
+            -1.0, 0.0, -1.0,  0.0,  0.0, -1.0, 0.0, 0.0, // bottom-left
+             1.0,  2.0, -1.0,  0.0,  0.0, -1.0, 1.0, 1.0, // top-right
+             1.0, 0.0, -1.0,  0.0,  0.0, -1.0, 1.0, 0.0, // bottom-right         
+             1.0,  2.0, -1.0,  0.0,  0.0, -1.0, 1.0, 1.0, // top-right
+            -1.0, 0.0, -1.0,  0.0,  0.0, -1.0, 0.0, 0.0, // bottom-left
+            -1.0,  2.0, -1.0,  0.0,  0.0, -1.0, 0.0, 1.0, // top-left
+            // front face
+            -1.0, 0.0,  1.0,  0.0,  0.0,  1.0, 0.0, 0.0, // bottom-left
+             1.0, 0.0,  1.0,  0.0,  0.0,  1.0, 1.0, 0.0, // bottom-right
+             1.0,  2.0,  1.0,  0.0,  0.0,  1.0, 1.0, 1.0, // top-right
+             1.0,  2.0,  1.0,  0.0,  0.0,  1.0, 1.0, 1.0, // top-right
+            -1.0,  2.0,  1.0,  0.0,  0.0,  1.0, 0.0, 1.0, // top-left
+            -1.0,  0.0,  1.0,  0.0,  0.0,  1.0, 0.0, 0.0, // bottom-left
+            // left face
+            -1.0,  2.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0, // top-right
+            -1.0,  2.0, -1.0, -1.0,  0.0,  0.0, 1.0, 1.0, // top-left
+            -1.0,  0.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0, // bottom-left
+            -1.0,  0.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0, // bottom-left
+            -1.0, 0.0,  1.0, -1.0,  0.0,  0.0, 0.0, 0.0, // bottom-right
+            -1.0,  2.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0, // top-right
+            // right face
+             1.0,  2.0,  1.0,  1.0,  0.0,  0.0, 1.0, 0.0, // top-left
+             1.0,  0.0, -1.0,  1.0,  0.0,  0.0, 0.0, 1.0, // bottom-right
+             1.0,  2.0, -1.0,  1.0,  0.0,  0.0, 1.0, 1.0, // top-right         
+             1.0,  0.0, -1.0,  1.0,  0.0,  0.0, 0.0, 1.0, // bottom-right
+             1.0,  2.0,  1.0,  1.0,  0.0,  0.0, 1.0, 0.0, // top-left
+             1.0,  0.0,  1.0,  1.0,  0.0,  0.0, 0.0, 0.0, // bottom-left     
+            // bottom face
+            -1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 0.0, 1.0, // top-right
+             1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // top-left
+             1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 0.0, // bottom-left
+             1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 0.0, // bottom-left
+            -1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 0.0, 0.0, // bottom-right
+            -1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 0.0, 1.0, // top-right
+            // top face
+            -1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 0.0, 1.0, // top-left
+             1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 0.0, // bottom-right
+             1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 1.0, 1.0, // top-right     
+             1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 0.0, // bottom-right
+            -1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 0.0, 1.0, // top-left
+            -1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 0.0, 0.0  // bottom-left  
+        ]);
+        const vertexVBO: WebGLBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexVBO);
+        gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 0);
+        gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+        gl.enableVertexAttribArray(2);
+        gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 8 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+        // 使用实例化数组
+        const modelArr: Array<number> = buildingPoses.reduce((acc: Array<number>, current: mat4) => {
+            for (let i = 0, size = current.length; i < size; i++) {
+                acc.push(current[i]);
+            }
+            return acc;
+        }, []);
+
+        const modelVBO: WebGLBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, modelVBO);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelArr), gl.STATIC_DRAW);
+
+        gl.enableVertexAttribArray(3);
+        gl.vertexAttribPointer(3, 4, gl.FLOAT, false, 16 * Float32Array.BYTES_PER_ELEMENT, 0);
+
+        gl.enableVertexAttribArray(4);
+        gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 16 * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+
+        gl.enableVertexAttribArray(5);
+        gl.vertexAttribPointer(5, 4, gl.FLOAT, false, 16 * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+
+        gl.enableVertexAttribArray(6);
+        gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 16 * Float32Array.BYTES_PER_ELEMENT, 12 * Float32Array.BYTES_PER_ELEMENT);
+        
+        gl.vertexAttribDivisor(3, 1);
+        gl.vertexAttribDivisor(4, 1);
+        gl.vertexAttribDivisor(5, 1);
+        gl.vertexAttribDivisor(6, 1);
+
+        gl.bindVertexArray(null);
+
+    }
+    gl.bindVertexArray(fakeBuildingsVAO);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 36, buildingPoses.length);
+    gl.bindVertexArray(null);
+}
