@@ -1,4 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix'
+import * as dat from 'dat.gui';
 import RenderLooper from 'render-looper';
 import { ShaderProgram, drawCube, drawCubeSmooth, OrbitCamera, drawQuad, drawQuadWithTex, renderSphere, ObjMesh } from './gl-helpers/index';
 import { getContext, resizeCvs2Screen, getRadian } from './utils/index';
@@ -15,6 +16,15 @@ import pbr_instanced_vs from './shaders/pbr_instanced_vs';
 import prefilter_fs from './shaders/prefilter_fs';
 import river from './river';
 
+class UIcontroller {
+    roughness: number = 0.01;
+}
+const ctrl = new UIcontroller();
+
+window.onload = function() {
+    const gui = new dat.GUI();
+    gui.add(ctrl, 'roughness', 0.0, 1.0);
+  };
 
 const lightPositions: Array<Float32Array> = [
     new Float32Array([-10.0, 10.0, 10.0]),
@@ -83,11 +93,12 @@ gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 const dragonMesh: ObjMesh = new ObjMesh(gl, './models/TheStanfordDragon.obj', []);
-const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
+// const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
+const lujiazui: ObjMesh = new ObjMesh(gl, './models/Tencent_BinHai.obj');
 
 const myHDR = new HDRImage();
-// myHDR.src = './hdr/Mans_Outside_1080.hdr';
-myHDR.src = './hdr/Milkyway_small222.hdr';
+myHDR.src = './hdr/Mans_Outside_2k.hdr';
+// myHDR.src = './hdr/Milkyway_small222.hdr';
 
 myHDR.onload = function() {
     const hdrTexture: WebGLTexture = gl.createTexture();
@@ -278,7 +289,8 @@ myHDR.onload = function() {
         // const metallic: number = 0.2;
         // const roughness: number = 0.35;
         pbrShader.uniform1f('metallic', metallic);
-        pbrShader.uniform1f('roughness', roughness);
+        // pbrShader.uniform1f('roughness', roughness);
+        pbrShader.uniform1f('roughness', ctrl.roughness);
         pbrShader.uniformMatrix4fv('model', model);
         // drawCubeSmooth(gl);
         // drawCube(gl);

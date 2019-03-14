@@ -21,6 +21,7 @@
   "dependencies": {
     "@types/gl-matrix": "^2.4.5",
     "@types/webgl2": "0.0.4",
+    "dat.gui": "^0.7.5",
     "gl-matrix": "^3.0.0",
     "render-looper": "^1.3.0"
   },
