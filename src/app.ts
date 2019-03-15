@@ -18,12 +18,16 @@ import river from './river';
 
 class UIcontroller {
     roughness: number = 0.01;
+    mainBuildingScale: number = 1.0;
+    mainBuildingMetallic: number = 0.9;
 }
 const ctrl = new UIcontroller();
 
 window.onload = function() {
     const gui = new dat.GUI();
     gui.add(ctrl, 'roughness', 0.0, 1.0);
+    gui.add(ctrl, 'mainBuildingScale', 1.0, 15.0);
+    gui.add(ctrl, 'mainBuildingMetallic', 0.0, 1.0);
   };
 
 const lightPositions: Array<Float32Array> = [
@@ -283,13 +287,8 @@ myHDR.onload = function() {
 
         const model: mat4 = mat4.create();
         // mat4.translate(model, model, [1.0, 1.0, 1.0]);
-        // mat4.scale(model, model, [5.0, 5.0, 5.0])
-        const metallic: number = 0.9;
-        const roughness: number = 0.20;
-        // const metallic: number = 0.2;
-        // const roughness: number = 0.35;
-        pbrShader.uniform1f('metallic', metallic);
-        // pbrShader.uniform1f('roughness', roughness);
+        mat4.scale(model, model, [ctrl.mainBuildingScale, ctrl.mainBuildingScale, ctrl.mainBuildingScale])
+        pbrShader.uniform1f('metallic', ctrl.mainBuildingMetallic);
         pbrShader.uniform1f('roughness', ctrl.roughness);
         pbrShader.uniformMatrix4fv('model', model);
         // drawCubeSmooth(gl);
@@ -297,17 +296,17 @@ myHDR.onload = function() {
         // renderSphere(gl);
         // mat4.translate(model, model, [5, 0, 0]);
         // pbrShader.uniformMatrix4fv('model', model);
-        // dragonMesh.draw();
+        dragonMesh.draw();
 
-        lujiazui.draw();
+        // lujiazui.draw();
 
-        pbrInstancedShader.use();
-        pbrInstancedShader.uniformMatrix4fv('view', view);
-        pbrInstancedShader.uniformMatrix4fv('projection', perspective);
-        pbrInstancedShader.uniform3fv('camPos', camPos);
-        pbrInstancedShader.uniform1f('metallic', metallic);
-        pbrInstancedShader.uniform1f('roughness', roughness);
-        drawFakeBuildings();
+        // pbrInstancedShader.use();
+        // pbrInstancedShader.uniformMatrix4fv('view', view);
+        // pbrInstancedShader.uniformMatrix4fv('projection', perspective);
+        // pbrInstancedShader.uniform3fv('camPos', camPos);
+        // pbrInstancedShader.uniform1f('metallic', metallic);
+        // pbrInstancedShader.uniform1f('roughness', roughness);
+        // drawFakeBuildings();
 
         backgroundShader.use();
         backgroundShader.uniformMatrix4fv('projection', perspective);
