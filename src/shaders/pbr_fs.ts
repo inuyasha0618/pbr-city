@@ -154,6 +154,7 @@ void main()
     // color = vec3(brdf, 0.0);
 
     float fogFactor = clamp((uFogDist.y - distFromView) / (uFogDist.y - uFogDist.x), 0.0, 1.0);
+    // float fogFactor = 1.0;
     color = mix(uFogColor, color, fogFactor);
     FragColor = vec4(color , 1.0);
 }

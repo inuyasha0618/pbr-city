@@ -312,7 +312,7 @@ myHDR.onload = function() {
 
     function drawCB(): void {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        camera.addYaw(0.2);
+        // camera.addYaw(0.2);
         const view: mat4 = camera.getViewMatrix();
         const perspective: mat4 = camera.getPerspectiveMatrix();
         // const camPos: vec3 = camera.getPosition();
@@ -393,6 +393,9 @@ function getRandom(start: number, end: number): number {
     return start + (end - start) * Math.random();
 }
 
+const beginDist: number = 5;
+const endDist: number = 50;
+
 function generateBuildingPos(gridSize: number, gridCnts: number) {
     const halfWidth: number = gridSize * gridCnts * 0.5;
     // 列主序！！！
@@ -404,11 +407,13 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
     );
     
     const discard: number = Math.floor(gridCnts * 0.5);
-    
+    const halfCnts: number = gridCnts * 0.5;
     for (let row = -paddingCnts; row < gridCnts + paddingCnts; row++) {
         const riverPart: Array<number> = river[row + 1] || [];
         for (let column = -paddingCnts; column < gridCnts + paddingCnts; column++) {
-            if (Math.random() > 0.3) continue;
+            const dist2center: number = Math.sqrt((row - halfCnts) * (row - halfCnts) + (column - halfCnts) * (column - halfCnts));
+            const density: number = calcuDensity(dist2center, beginDist, endDist);
+            if (Math.random() > density) continue;
             if (riverPart.length > 0 && column >= riverPart[0] - 1 && column <= riverPart[1] - 1) continue;
 
             // if (row >= discard -2 && row <= discard && column >= discard - 2 && column <= discard) continue;
@@ -427,6 +432,20 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
             buildingPoses.push(finalModelMx);
         }
     }    
+}
+
+function clamp(x: number, min: number, max: number): number {
+    if (x < min) {
+        return min;
+    } else if (x > max) {
+        return max;
+    } else {
+        return x;
+    }
+}
+
+function calcuDensity(dist: number, start: number, end: number): number  {
+    return clamp((end - dist) / (end - start), 0.05, 0.3);
 }
 
 generateBuildingPos(gridSize, gridCnts);
