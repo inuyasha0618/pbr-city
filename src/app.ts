@@ -13,6 +13,7 @@ import irradiance_convolution_fs from './shaders/irradiance_convolution_fs';
 import pbr_vs from './shaders/pbr_vs';
 import pbr_fs from './shaders/pbr_fs';
 import pbr_instanced_vs from './shaders/pbr_instanced_vs';
+import pbr_instanced_fs from './shaders/pbr_instanced_fs';
 import prefilter_fs from './shaders/prefilter_fs';
 import quad_vs from './shaders/quad_vs';
 import quad_fs from './shaders/quad_fs';
@@ -56,7 +57,7 @@ gl.depthFunc(gl.LEQUAL)
 gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
 const pbrShader: ShaderProgram = new ShaderProgram(gl, pbr_vs, pbr_fs, 'pbrShader');
-const pbrInstancedShader: ShaderProgram = new ShaderProgram(gl, pbr_instanced_vs, pbr_fs, 'pbrShader');
+const pbrInstancedShader: ShaderProgram = new ShaderProgram(gl, pbr_instanced_vs, pbr_instanced_fs, 'pbrInstancedShader');
 const equirectangularToCubemapShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, equirectangular_to_cubemap_fs, 'equirectangularToCubemapShader');
 const irradianceShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, irradiance_convolution_fs, 'irradianceShader');
 const prefilterShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, prefilter_fs, 'prefilterShader');
@@ -72,8 +73,9 @@ gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, 512, 512, 0, gl.RGBA, gl.FLOAT, null
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-gl.generateMipmap(gl.TEXTURE_2D);
+// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+// gl.generateMipmap(gl.TEXTURE_2D);
 gl.bindFramebuffer(gl.FRAMEBUFFER, proceduralTexFBO);
 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, proceduralTex, 0);
 gl.viewport(0, 0, 512, 512);
@@ -89,12 +91,14 @@ gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 // gl.activeTexture(gl.TEXTURE0);
 // gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
 // drawQuad(gl);
+// throw 'testing';
+
 
 pbrShader.use();
 pbrShader.uniform1i('irradianceMap', 0);
 pbrShader.uniform1i('prefilterMap', 1);
 pbrShader.uniform1i('brdfLUT', 2);
-pbrShader.uniform3fv('albedo', new Float32Array([0.7, 0.0, 0.0]));
+pbrShader.uniform3fv('albedo', new Float32Array([0.6, 0.6, 0.6]));
 // pbrShader.uniform3fv('albedo', new Float32Array([1.0, 1.0, 1.0]));
 pbrShader.uniform1f('ao', 1.0);
 
@@ -107,7 +111,8 @@ pbrInstancedShader.use();
 pbrInstancedShader.uniform1i('irradianceMap', 0);
 pbrInstancedShader.uniform1i('prefilterMap', 1);
 pbrInstancedShader.uniform1i('brdfLUT', 2);
-pbrInstancedShader.uniform3fv('albedo', new Float32Array([0.5, 0.0, 0.0]));
+pbrInstancedShader.uniform1i('tex', 3);
+// pbrInstancedShader.uniform3fv('albedo', new Float32Array([0.5, 0.0, 0.0]));
 pbrInstancedShader.uniform1f('ao', 1.0);
 
 for (let i = 0, size = lightPositions.length; i < size; i++) {
@@ -128,12 +133,13 @@ gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
 
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-const dragonMesh: ObjMesh = new ObjMesh(gl, './models/TheStanfordDragon.obj', []);
-// const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
-const lujiazui: ObjMesh = new ObjMesh(gl, './models/Tencent_BinHai.obj');
+// const dragonMesh: ObjMesh = new ObjMesh(gl, './models/TheStanfordDragon.obj', []);
+const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
+// const lujiazui: ObjMesh = new ObjMesh(gl, './models/Tencent_BinHai.obj');
 
 const myHDR = new HDRImage();
 myHDR.src = './hdr/Mans_Outside_1080.hdr';
+// myHDR.src = './hdr/5TH_AVENUE.hdr';
 // myHDR.src = './hdr/Milkyway_small222.hdr';
 
 myHDR.onload = function() {
@@ -325,20 +331,21 @@ myHDR.onload = function() {
         pbrShader.uniformMatrix4fv('model', model);
         // drawCubeSmooth(gl);
         // drawCube(gl);
-        renderSphere(gl);
+        // renderSphere(gl);
         // mat4.translate(model, model, [5, 0, 0]);
         // pbrShader.uniformMatrix4fv('model', model);
         // dragonMesh.draw();
 
-        // lujiazui.draw();
+        lujiazui.draw();
 
-        // pbrInstancedShader.use();
-        // pbrInstancedShader.uniformMatrix4fv('view', view);
-        // pbrInstancedShader.uniformMatrix4fv('projection', perspective);
-        // pbrInstancedShader.uniform3fv('camPos', camPos);
-        // pbrInstancedShader.uniform1f('metallic', metallic);
-        // pbrInstancedShader.uniform1f('roughness', roughness);
-        // drawFakeBuildings();
+        pbrInstancedShader.use();
+        pbrInstancedShader.uniformMatrix4fv('view', view);
+        pbrInstancedShader.uniformMatrix4fv('projection', perspective);
+        pbrInstancedShader.uniform3fv('camPos', camPos);
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
+        drawFakeBuildings();
+        gl.bindTexture(gl.TEXTURE_2D, null);
 
         backgroundShader.use();
         backgroundShader.uniformMatrix4fv('projection', perspective);
@@ -413,33 +420,33 @@ function drawFakeBuildings(): void {
             -1.0,  2.0,  1.0,  0.0,  0.0,  1.0, 0.0, 1.0, // top-left
             -1.0,  0.0,  1.0,  0.0,  0.0,  1.0, 0.0, 0.0, // bottom-left
             // left face
-            -1.0,  2.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0, // top-right
-            -1.0,  2.0, -1.0, -1.0,  0.0,  0.0, 1.0, 1.0, // top-left
-            -1.0,  0.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0, // bottom-left
-            -1.0,  0.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0, // bottom-left
-            -1.0, 0.0,  1.0, -1.0,  0.0,  0.0, 0.0, 0.0, // bottom-right
-            -1.0,  2.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0, // top-right
+            -1.0,  2.0,  1.0, -1.0,  0.0,  0.0, 1.0, 1.0, // top-right
+            -1.0,  2.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0, // top-left
+            -1.0,  0.0, -1.0, -1.0,  0.0,  0.0, 0.0, 0.0, // bottom-left
+            -1.0,  0.0, -1.0, -1.0,  0.0,  0.0, 0.0, 0.0, // bottom-left
+            -1.0, 0.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0, // bottom-right
+            -1.0,  2.0,  1.0, -1.0,  0.0,  0.0, 1.0, 1.0, // top-right
             // right face
-             1.0,  2.0,  1.0,  1.0,  0.0,  0.0, 1.0, 0.0, // top-left
-             1.0,  0.0, -1.0,  1.0,  0.0,  0.0, 0.0, 1.0, // bottom-right
+             1.0,  2.0,  1.0,  1.0,  0.0,  0.0, 0.0, 1.0, // top-left
+             1.0,  0.0, -1.0,  1.0,  0.0,  0.0, 1.0, 0.0, // bottom-right
              1.0,  2.0, -1.0,  1.0,  0.0,  0.0, 1.0, 1.0, // top-right         
-             1.0,  0.0, -1.0,  1.0,  0.0,  0.0, 0.0, 1.0, // bottom-right
-             1.0,  2.0,  1.0,  1.0,  0.0,  0.0, 1.0, 0.0, // top-left
+             1.0,  0.0, -1.0,  1.0,  0.0,  0.0, 1.0, 0.0, // bottom-right
+             1.0,  2.0,  1.0,  1.0,  0.0,  0.0, 0.0, 1.0, // top-left
              1.0,  0.0,  1.0,  1.0,  0.0,  0.0, 0.0, 0.0, // bottom-left     
             // bottom face
-            -1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 0.0, 1.0, // top-right
+            -1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // top-right
              1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // top-left
-             1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 0.0, // bottom-left
-             1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 0.0, // bottom-left
-            -1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 0.0, 0.0, // bottom-right
-            -1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 0.0, 1.0, // top-right
+             1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // bottom-left
+             1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // bottom-left
+            -1.0,  0.0,  1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // bottom-right
+            -1.0,  0.0, -1.0,  0.0, -1.0,  0.0, 1.0, 1.0, // top-right
             // top face
-            -1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 0.0, 1.0, // top-left
-             1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 0.0, // bottom-right
+            -1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 1.0, 1.0, // top-left
+             1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 1.0, // bottom-right
              1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 1.0, 1.0, // top-right     
-             1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 0.0, // bottom-right
-            -1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 0.0, 1.0, // top-left
-            -1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 0.0, 0.0  // bottom-left  
+             1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 1.0, // bottom-right
+            -1.0,  2.0, -1.0,  0.0,  1.0,  0.0, 1.0, 1.0, // top-left
+            -1.0,  2.0,  1.0,  0.0,  1.0,  0.0, 1.0, 1.0  // bottom-left  
         ]);
         const vertexVBO: WebGLBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexVBO);
