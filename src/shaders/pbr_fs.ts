@@ -5,12 +5,15 @@ out vec4 FragColor;
 in vec2 TexCoords;
 in vec3 WorldPos;
 in vec3 Normal;
+in float distFromView;
 
 // material parameters
 uniform vec3 albedo;
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
+uniform vec2 uFogDist;
+uniform vec3 uFogColor;
 
 // IBL
 uniform samplerCube irradianceMap;
@@ -150,6 +153,8 @@ void main()
     // color = vec3(max(dot(N, V), 0.0));
     // color = vec3(brdf, 0.0);
 
+    float fogFactor = clamp((uFogDist.y - distFromView) / (uFogDist.y - uFogDist.x), 0.0, 1.0);
+    color = mix(uFogColor, color, fogFactor);
     FragColor = vec4(color , 1.0);
 }
 `.trim();

@@ -25,6 +25,8 @@ class UIcontroller {
     roughness: number = 0.01;
     mainBuildingScale: number = 1.0;
     mainBuildingMetallic: number = 0.9;
+    fogBegin: number = 14.0;
+    fogEnd: number = 71.0;
 }
 const ctrl = new UIcontroller();
 
@@ -33,6 +35,8 @@ window.onload = function() {
     gui.add(ctrl, 'roughness', 0.0, 1.0);
     gui.add(ctrl, 'mainBuildingScale', 1.0, 15.0);
     gui.add(ctrl, 'mainBuildingMetallic', 0.0, 1.0);
+    gui.add(ctrl, 'fogBegin', 10.0, 100.0);
+    gui.add(ctrl, 'fogEnd', 70.0, 120.0);
 };
 
 const lightPositions: Array<Float32Array> = [
@@ -43,10 +47,10 @@ const lightPositions: Array<Float32Array> = [
 ];
 
 const lightColors: Array<Float32Array> = [
-    new Float32Array([300.0, 300.0, 300.0]),
-    new Float32Array([300.0, 300.0, 300.0]),
-    new Float32Array([300.0, 300.0, 300.0]),
-    new Float32Array([300.0, 300.0, 300.0]),
+    new Float32Array([3.0, 3.0, 3.0]),
+    new Float32Array([3.0, 3.0, 3.0]),
+    new Float32Array([3.0, 3.0, 3.0]),
+    new Float32Array([3.0, 3.0, 3.0]),
 ];
 
 const gl: WebGL2RenderingContext = getContext('#cvs');
@@ -57,7 +61,8 @@ gl.depthFunc(gl.LEQUAL)
 gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
 const pbrShader: ShaderProgram = new ShaderProgram(gl, pbr_vs, pbr_fs, 'pbrShader');
-const pbrInstancedShader: ShaderProgram = new ShaderProgram(gl, pbr_instanced_vs, pbr_instanced_fs, 'pbrInstancedShader');
+// const pbrInstancedShader: ShaderProgram = new ShaderProgram(gl, pbr_instanced_vs, pbr_instanced_fs, 'pbrInstancedShader');
+const pbrInstancedShader: ShaderProgram = new ShaderProgram(gl, pbr_instanced_vs, pbr_fs, 'pbrInstancedShader');
 const equirectangularToCubemapShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, equirectangular_to_cubemap_fs, 'equirectangularToCubemapShader');
 const irradianceShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, irradiance_convolution_fs, 'irradianceShader');
 const prefilterShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, prefilter_fs, 'prefilterShader');
@@ -138,9 +143,9 @@ const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
 // const lujiazui: ObjMesh = new ObjMesh(gl, './models/Tencent_BinHai.obj');
 
 const myHDR = new HDRImage();
-myHDR.src = './hdr/Mans_Outside_1080.hdr';
+// myHDR.src = './hdr/Mans_Outside_1080.hdr';
 // myHDR.src = './hdr/5TH_AVENUE.hdr';
-// myHDR.src = './hdr/Milkyway_small222.hdr';
+myHDR.src = './hdr/Milkyway_small222.hdr';
 
 myHDR.onload = function() {
     const hdrTexture: WebGLTexture = gl.createTexture();
@@ -302,11 +307,12 @@ myHDR.onload = function() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-    gl.clearColor(0.2, 0.3, 0.3, 1.0);
-    const camera: OrbitCamera = new OrbitCamera(gl, 45, 0, 0, SCR_WIDTH / SCR_HEIGHT, 0.1, 1000.0);
+    gl.clearColor(0.1, 0.1, 0.1, 1.0);
+    const camera: OrbitCamera = new OrbitCamera(gl, 45, 0, -30, SCR_WIDTH / SCR_HEIGHT, 1.0, 1000.0);
 
     function drawCB(): void {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        camera.addYaw(0.2);
         const view: mat4 = camera.getViewMatrix();
         const perspective: mat4 = camera.getPerspectiveMatrix();
         // const camPos: vec3 = camera.getPosition();
@@ -329,6 +335,9 @@ myHDR.onload = function() {
         pbrShader.uniform1f('metallic', ctrl.mainBuildingMetallic);
         pbrShader.uniform1f('roughness', ctrl.roughness);
         pbrShader.uniformMatrix4fv('model', model);
+        pbrShader.uniform3fv('albedo', new Float32Array([0.6, 0.6, 0.6]));
+        pbrShader.uniform2f('uFogDist', ctrl.fogBegin, ctrl.fogEnd);
+        pbrShader.uniform3fv('uFogColor', new Float32Array([0.0, 0.0, 0.0]));
         // drawCubeSmooth(gl);
         // drawCube(gl);
         // renderSphere(gl);
@@ -342,18 +351,35 @@ myHDR.onload = function() {
         pbrInstancedShader.uniformMatrix4fv('view', view);
         pbrInstancedShader.uniformMatrix4fv('projection', perspective);
         pbrInstancedShader.uniform3fv('camPos', camPos);
+        pbrInstancedShader.uniform1f('metallic', ctrl.mainBuildingMetallic);
+        pbrInstancedShader.uniform1f('roughness', ctrl.roughness);
+        pbrInstancedShader.uniform3fv('albedo', new Float32Array([0.6, 0.6, 0.6]));
+        pbrInstancedShader.uniform2f('uFogDist', ctrl.fogBegin, ctrl.fogEnd);
+        pbrInstancedShader.uniform3fv('uFogColor', new Float32Array([0.0, 0.0, 0.0]));
+
         gl.activeTexture(gl.TEXTURE3);
         gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
         drawFakeBuildings();
         gl.bindTexture(gl.TEXTURE_2D, null);
 
-        backgroundShader.use();
-        backgroundShader.uniformMatrix4fv('projection', perspective);
-        backgroundShader.uniformMatrix4fv('view', view);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, envCubemap);
+        pbrShader.use();
+        const groundModel: mat4 = mat4.create();
+        mat4.rotateX(groundModel, groundModel, getRadian(-90));
+        mat4.scale(groundModel, groundModel, [1000.0, 1000.0, 1000.0]);
+        pbrShader.uniformMatrix4fv('model', groundModel);
+        pbrShader.uniform1f('roughness', 0.8);
+        pbrShader.uniform1f('metallic', 0.0);
+        pbrShader.uniform3fv('albedo', new Float32Array([0.0, 0.0, 0.0]));
 
-        drawCube(gl);
+        drawQuad(gl);
+
+        // backgroundShader.use();
+        // backgroundShader.uniformMatrix4fv('projection', perspective);
+        // backgroundShader.uniformMatrix4fv('view', view);
+        // gl.activeTexture(gl.TEXTURE0);
+        // gl.bindTexture(gl.TEXTURE_CUBE_MAP, envCubemap);
+
+        // drawCube(gl);
     }
 
     const looper = new RenderLooper(drawCB).start();
@@ -381,6 +407,7 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
     for (let row = 0; row < gridCnts; row++) {
         const riverPart: Array<number> = river[row + 1] || [];
         for (let column = 0; column < gridCnts; column++) {
+            if (Math.random() > 0.3) continue;
             if (riverPart.length > 0 && column >= riverPart[0] - 1 && column <= riverPart[1] - 1) continue;
 
             // if (row >= discard -2 && row <= discard && column >= discard - 2 && column <= discard) continue;
@@ -389,7 +416,11 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
             // mat4.rotateX(localMx, localMx, getRadian(-90));
             // mat4.rotateY(localMx, localMx, getRadian(90 * Math.random()));
             mat4.scale(localMx, localMx, [0.5 * gridSize, 0.5 * gridSize, 0.5 * gridSize]);
-            mat4.scale(localMx, localMx, [getRandom(0.3, 0.5), getRandom(0.5, 1.5), getRandom(0.4, 0.6)])
+            const scaleX: number = Math.random()*Math.random()*Math.random()*Math.random() * 0.5 + 0.5;
+            const scaleY: number = (Math.random() * Math.random()) * 8 + 0.5;
+            const scaleZ = getRandom(0.4, 1.0);
+            // mat4.scale(localMx, localMx, [getRandom(0.3, 0.5), getRandom(0.5, 1.5), getRandom(0.4, 0.6)]);
+            mat4.scale(localMx, localMx, [scaleX, scaleY, scaleZ]);
             const finalModelMx: mat4 = mat4.create();
             mat4.multiply(finalModelMx, w2Checkerboard, localMx);
             buildingPoses.push(finalModelMx);
