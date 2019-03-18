@@ -19,7 +19,7 @@ import quad_vs from './shaders/quad_vs';
 import quad_fs from './shaders/quad_fs';
 import calc_tex_vs from './shaders/calc_tex_vs';
 import calc_tex_fs from './shaders/calc_tex_fs';
-import river from './river';
+import river from './river2';
 
 class UIcontroller {
     roughness: number = 0.01;
@@ -145,7 +145,7 @@ const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
 const myHDR = new HDRImage();
 // myHDR.src = './hdr/Mans_Outside_1080.hdr';
 // myHDR.src = './hdr/5TH_AVENUE.hdr';
-myHDR.src = './hdr/Milkyway_small222.hdr';
+myHDR.src = './hdr/Milkyway_small.hdr';
 
 myHDR.onload = function() {
     const hdrTexture: WebGLTexture = gl.createTexture();
@@ -312,7 +312,7 @@ myHDR.onload = function() {
 
     function drawCB(): void {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        // camera.addYaw(0.2);
+        camera.addYaw(0.2);
         const view: mat4 = camera.getViewMatrix();
         const perspective: mat4 = camera.getPerspectiveMatrix();
         // const camPos: vec3 = camera.getPosition();
