@@ -15,6 +15,8 @@ import pbr_fs from './shaders/pbr_fs';
 import pbr_instanced_vs from './shaders/pbr_instanced_vs';
 import prefilter_fs from './shaders/prefilter_fs';
 import quad_vs from './shaders/quad_vs';
+import quad_fs from './shaders/quad_fs';
+import calc_tex_vs from './shaders/calc_tex_vs';
 import calc_tex_fs from './shaders/calc_tex_fs';
 import river from './river';
 
@@ -60,7 +62,8 @@ const irradianceShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, irradi
 const prefilterShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, prefilter_fs, 'prefilterShader');
 const brdfShader: ShaderProgram = new ShaderProgram(gl, brdf_vs, brdf_fs, 'brdfShader');
 const backgroundShader: ShaderProgram = new ShaderProgram(gl, background_vs, background_fs, 'backgroundShader');
-const proceduralTexShader: ShaderProgram = new ShaderProgram(gl, quad_vs, calc_tex_fs, 'proceduralTexShader');
+const proceduralTexShader: ShaderProgram = new ShaderProgram(gl, calc_tex_vs, calc_tex_fs, 'proceduralTexShader');
+const testQuadShader: ShaderProgram = new ShaderProgram(gl, quad_vs, quad_fs, 'testQuadShader');
 
 const proceduralTexFBO: WebGLFramebuffer = gl.createFramebuffer();
 const proceduralTex: WebGLTexture = gl.createTexture();
@@ -73,17 +76,25 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 gl.generateMipmap(gl.TEXTURE_2D);
 gl.bindFramebuffer(gl.FRAMEBUFFER, proceduralTexFBO);
 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, proceduralTex, 0);
-
+gl.viewport(0, 0, 512, 512);
+gl.clear(gl.COLOR_BUFFER_BIT);
 proceduralTexShader.use();
-proceduralTexShader.uniform2f('screenSize', SCR_WIDTH, SCR_HEIGHT);
-drawQuad(gl);
+drawQuadWithTex(gl);
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+// gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+// testQuadShader.use();
+// testQuadShader.uniform2f('screenSize', SCR_WIDTH, SCR_HEIGHT);
+// testQuadShader.uniform1i('tex', 0);
+// gl.activeTexture(gl.TEXTURE0);
+// gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
+// drawQuad(gl);
 
 pbrShader.use();
 pbrShader.uniform1i('irradianceMap', 0);
 pbrShader.uniform1i('prefilterMap', 1);
 pbrShader.uniform1i('brdfLUT', 2);
-pbrShader.uniform3fv('albedo', new Float32Array([0.0, 0.0, 0.0]));
+pbrShader.uniform3fv('albedo', new Float32Array([0.7, 0.0, 0.0]));
 // pbrShader.uniform3fv('albedo', new Float32Array([1.0, 1.0, 1.0]));
 pbrShader.uniform1f('ao', 1.0);
 
