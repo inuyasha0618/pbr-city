@@ -386,6 +386,7 @@ myHDR.onload = function() {
 }
 
 const gridCnts: number = 60;
+const paddingCnts: number = 100;
 const gridSize: number = 1;
 const buildingPoses: Array<mat4> = [];
 function getRandom(start: number, end: number): number {
@@ -404,9 +405,9 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
     
     const discard: number = Math.floor(gridCnts * 0.5);
     
-    for (let row = 0; row < gridCnts; row++) {
+    for (let row = -paddingCnts; row < gridCnts + paddingCnts; row++) {
         const riverPart: Array<number> = river[row + 1] || [];
-        for (let column = 0; column < gridCnts; column++) {
+        for (let column = -paddingCnts; column < gridCnts + paddingCnts; column++) {
             if (Math.random() > 0.3) continue;
             if (riverPart.length > 0 && column >= riverPart[0] - 1 && column <= riverPart[1] - 1) continue;
 
