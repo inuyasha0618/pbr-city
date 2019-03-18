@@ -79,6 +79,10 @@ void main()
     vec3 V = normalize(camPos - WorldPos);
     vec3 R = normalize(reflect(-V, N)); 
 
+    // vec3 N = Normal;
+    // vec3 V = normalize(camPos - WorldPos);
+    // vec3 R = reflect(-V, N); 
+
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
     vec3 F0 = vec3(0.04); 
@@ -157,6 +161,7 @@ void main()
     // float fogFactor = 1.0;
     color = mix(uFogColor, color, fogFactor);
     FragColor = vec4(color , 1.0);
+    // FragColor = vec4(vec3(kD) , 1.0);
 }
 `.trim();
 

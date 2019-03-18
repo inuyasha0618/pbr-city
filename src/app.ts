@@ -26,7 +26,7 @@ class UIcontroller {
     mainBuildingScale: number = 1.0;
     mainBuildingMetallic: number = 0.9;
     fogBegin: number = 33.0;
-    fogEnd: number = 71.0;
+    fogEnd: number = 112.0;
 }
 const ctrl = new UIcontroller();
 
@@ -47,11 +47,15 @@ const lightPositions: Array<Float32Array> = [
 ];
 
 const lightColors: Array<Float32Array> = [
-    new Float32Array([3.0, 3.0, 3.0]),
-    new Float32Array([3.0, 3.0, 3.0]),
-    new Float32Array([3.0, 3.0, 3.0]),
-    new Float32Array([3.0, 3.0, 3.0]),
+    new Float32Array([300.0, 300.0, 300.0]),
+    new Float32Array([300.0, 300.0, 300.0]),
+    new Float32Array([300.0, 300.0, 300.0]),
+    new Float32Array([300.0, 300.0, 300.0]),
 ];
+
+const nrRows: number = 7;
+const nrColumns: number = 7;
+const spacing: number = 2.5;
 
 const gl: WebGL2RenderingContext = getContext('#cvs');
 gl.getExtension('EXT_color_buffer_float');
@@ -71,24 +75,24 @@ const backgroundShader: ShaderProgram = new ShaderProgram(gl, background_vs, bac
 const proceduralTexShader: ShaderProgram = new ShaderProgram(gl, calc_tex_vs, calc_tex_fs, 'proceduralTexShader');
 const testQuadShader: ShaderProgram = new ShaderProgram(gl, quad_vs, quad_fs, 'testQuadShader');
 
-const proceduralTexFBO: WebGLFramebuffer = gl.createFramebuffer();
-const proceduralTex: WebGLTexture = gl.createTexture();
-gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, 512, 512, 0, gl.RGBA, gl.FLOAT, null);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-// gl.generateMipmap(gl.TEXTURE_2D);
-gl.bindFramebuffer(gl.FRAMEBUFFER, proceduralTexFBO);
-gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, proceduralTex, 0);
-gl.viewport(0, 0, 512, 512);
-gl.clear(gl.COLOR_BUFFER_BIT);
-proceduralTexShader.use();
-drawQuadWithTex(gl);
-gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+// const proceduralTexFBO: WebGLFramebuffer = gl.createFramebuffer();
+// const proceduralTex: WebGLTexture = gl.createTexture();
+// gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
+// gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, 512, 512, 0, gl.RGBA, gl.FLOAT, null);
+// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+// // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+// // gl.generateMipmap(gl.TEXTURE_2D);
+// gl.bindFramebuffer(gl.FRAMEBUFFER, proceduralTexFBO);
+// gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, proceduralTex, 0);
+// gl.viewport(0, 0, 512, 512);
+// gl.clear(gl.COLOR_BUFFER_BIT);
+// proceduralTexShader.use();
+// drawQuadWithTex(gl);
+// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+// gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 // testQuadShader.use();
 // testQuadShader.uniform2f('screenSize', SCR_WIDTH, SCR_HEIGHT);
@@ -103,7 +107,7 @@ pbrShader.use();
 pbrShader.uniform1i('irradianceMap', 0);
 pbrShader.uniform1i('prefilterMap', 1);
 pbrShader.uniform1i('brdfLUT', 2);
-pbrShader.uniform3fv('albedo', new Float32Array([0.6, 0.6, 0.6]));
+pbrShader.uniform3fv('albedo', new Float32Array([0.9, 0.0, 0.0]));
 // pbrShader.uniform3fv('albedo', new Float32Array([1.0, 1.0, 1.0]));
 pbrShader.uniform1f('ao', 1.0);
 
@@ -146,6 +150,7 @@ const myHDR = new HDRImage();
 // myHDR.src = './hdr/Mans_Outside_1080.hdr';
 // myHDR.src = './hdr/5TH_AVENUE.hdr';
 myHDR.src = './hdr/Milkyway_small.hdr';
+// myHDR.src = './hdr/newport_loft.hdr';
 
 myHDR.onload = function() {
     const hdrTexture: WebGLTexture = gl.createTexture();
@@ -306,10 +311,20 @@ myHDR.onload = function() {
     drawQuadWithTex(gl);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
+    // gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+    // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // testQuadShader.use();
+    // testQuadShader.uniform2f('screenSize', SCR_WIDTH, SCR_HEIGHT);
+    // testQuadShader.uniform1i('tex', 0);
+    // gl.activeTexture(gl.TEXTURE0);
+    // gl.bindTexture(gl.TEXTURE_2D, brdfLUTTexture);
+    // drawQuad(gl);
+    // throw 'testing'; 
+
     gl.viewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
-    const camera: OrbitCamera = new OrbitCamera(gl, 45, 0, -30, SCR_WIDTH / SCR_HEIGHT, 1.0, 1000.0);
-
+    const camera: OrbitCamera = new OrbitCamera(gl, 23, 264, -22, SCR_WIDTH / SCR_HEIGHT, 1.0, 1000.0);
+    window.camera = camera;
     function drawCB(): void {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         camera.addYaw(0.2);
@@ -335,7 +350,7 @@ myHDR.onload = function() {
         pbrShader.uniform1f('metallic', ctrl.mainBuildingMetallic);
         pbrShader.uniform1f('roughness', ctrl.roughness);
         pbrShader.uniformMatrix4fv('model', model);
-        pbrShader.uniform3fv('albedo', new Float32Array([0.6, 0.6, 0.6]));
+        pbrShader.uniform3fv('albedo', new Float32Array([0.7, 0.0, 0.0]));
         pbrShader.uniform2f('uFogDist', ctrl.fogBegin, ctrl.fogEnd);
         pbrShader.uniform3fv('uFogColor', new Float32Array([0.0, 0.0, 0.0]));
         // drawCubeSmooth(gl);
@@ -344,6 +359,32 @@ myHDR.onload = function() {
         // mat4.translate(model, model, [5, 0, 0]);
         // pbrShader.uniformMatrix4fv('model', model);
         // dragonMesh.draw();
+
+
+        // 测试渲染的正确性
+        // for (let row: number = 0; row < nrRows; ++row)
+        // {
+        //     pbrShader.uniform1f("metallic", row / nrRows);
+        //     for (let col: number = 0; col < nrColumns; ++col)
+        //     {
+        //         // we clamp the roughness to 0.025 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+        //         // on direct lighting.
+        //         pbrShader.uniform1f("roughness", clamp(col / nrColumns, 0.05, 1.0));
+
+        //         const model: mat4 = mat4.create();
+        //         mat4.translate(model, model, [(col - (nrColumns / 2)) * spacing, (row - (nrRows / 2)) * spacing, -2.0])
+
+        //         // model = glm::translate(model, glm::vec3(
+        //         //     (float)(col - (nrColumns / 2)) * spacing,
+        //         //     (float)(row - (nrRows / 2)) * spacing,
+        //         //     -2.0f
+        //         // ));
+        //         pbrShader.uniformMatrix4fv("model", model);
+        //         renderSphere(gl);
+        //     }
+        // }
+
+
 
         lujiazui.draw();
 
@@ -357,10 +398,10 @@ myHDR.onload = function() {
         pbrInstancedShader.uniform2f('uFogDist', ctrl.fogBegin, ctrl.fogEnd);
         pbrInstancedShader.uniform3fv('uFogColor', new Float32Array([0.0, 0.0, 0.0]));
 
-        gl.activeTexture(gl.TEXTURE3);
-        gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
+        // gl.activeTexture(gl.TEXTURE3);
+        // gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
         drawFakeBuildings();
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        // gl.bindTexture(gl.TEXTURE_2D, null);
 
         pbrShader.use();
         const groundModel: mat4 = mat4.create();
@@ -368,8 +409,8 @@ myHDR.onload = function() {
         mat4.scale(groundModel, groundModel, [1000.0, 1000.0, 1000.0]);
         pbrShader.uniformMatrix4fv('model', groundModel);
         pbrShader.uniform1f('roughness', 0.8);
-        pbrShader.uniform1f('metallic', 0.0);
-        pbrShader.uniform3fv('albedo', new Float32Array([0.0, 0.0, 0.0]));
+        pbrShader.uniform1f('metallic', 0.2);
+        pbrShader.uniform3fv('albedo', new Float32Array([0.1, 0.1, 0.1]));
 
         drawQuad(gl);
 
@@ -377,7 +418,9 @@ myHDR.onload = function() {
         // backgroundShader.uniformMatrix4fv('projection', perspective);
         // backgroundShader.uniformMatrix4fv('view', view);
         // gl.activeTexture(gl.TEXTURE0);
-        // gl.bindTexture(gl.TEXTURE_CUBE_MAP, envCubemap);
+        // // gl.bindTexture(gl.TEXTURE_CUBE_MAP, envCubemap);
+        // // gl.bindTexture(gl.TEXTURE_CUBE_MAP, irradianceMap);
+        // gl.bindTexture(gl.TEXTURE_CUBE_MAP, prefilterMap);
 
         // drawCube(gl);
     }
@@ -420,7 +463,7 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
             const localMx: mat4 = mat4.create();
             mat4.translate(localMx, localMx, [column * gridSize + 0.5 * gridSize, 0.0, row * gridSize + 0.5 * gridSize]);
             // mat4.rotateX(localMx, localMx, getRadian(-90));
-            // mat4.rotateY(localMx, localMx, getRadian(90 * Math.random()));
+            mat4.rotateY(localMx, localMx, getRadian(60 * Math.random()));
             mat4.scale(localMx, localMx, [0.5 * gridSize, 0.5 * gridSize, 0.5 * gridSize]);
             const scaleX: number = Math.random()*Math.random()*Math.random()*Math.random() * 0.5 + 0.5;
             const scaleY: number = (Math.random() * Math.random()) * 8 + 0.5;
@@ -445,7 +488,7 @@ function clamp(x: number, min: number, max: number): number {
 }
 
 function calcuDensity(dist: number, start: number, end: number): number  {
-    return clamp((end - dist) / (end - start), 0.05, 0.3);
+    return clamp((end - dist) / (end - start), 0.05, 0.15);
 }
 
 generateBuildingPos(gridSize, gridCnts);
