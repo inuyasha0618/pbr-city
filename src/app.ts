@@ -14,6 +14,8 @@ import pbr_vs from './shaders/pbr_vs';
 import pbr_fs from './shaders/pbr_fs';
 import pbr_instanced_vs from './shaders/pbr_instanced_vs';
 import prefilter_fs from './shaders/prefilter_fs';
+import quad_vs from './shaders/quad_vs';
+import calc_tex_fs from './shaders/calc_tex_fs';
 import river from './river';
 
 class UIcontroller {
@@ -28,7 +30,7 @@ window.onload = function() {
     gui.add(ctrl, 'roughness', 0.0, 1.0);
     gui.add(ctrl, 'mainBuildingScale', 1.0, 15.0);
     gui.add(ctrl, 'mainBuildingMetallic', 0.0, 1.0);
-  };
+};
 
 const lightPositions: Array<Float32Array> = [
     new Float32Array([-10.0, 10.0, 10.0]),
@@ -58,12 +60,31 @@ const irradianceShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, irradi
 const prefilterShader: ShaderProgram = new ShaderProgram(gl, cubemap_vs, prefilter_fs, 'prefilterShader');
 const brdfShader: ShaderProgram = new ShaderProgram(gl, brdf_vs, brdf_fs, 'brdfShader');
 const backgroundShader: ShaderProgram = new ShaderProgram(gl, background_vs, background_fs, 'backgroundShader');
+const proceduralTexShader: ShaderProgram = new ShaderProgram(gl, quad_vs, calc_tex_fs, 'proceduralTexShader');
+
+const proceduralTexFBO: WebGLFramebuffer = gl.createFramebuffer();
+const proceduralTex: WebGLTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, 512, 512, 0, gl.RGBA, gl.FLOAT, null);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+gl.generateMipmap(gl.TEXTURE_2D);
+gl.bindFramebuffer(gl.FRAMEBUFFER, proceduralTexFBO);
+gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, proceduralTex, 0);
+
+proceduralTexShader.use();
+proceduralTexShader.uniform2f('screenSize', SCR_WIDTH, SCR_HEIGHT);
+drawQuad(gl);
+gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 pbrShader.use();
 pbrShader.uniform1i('irradianceMap', 0);
 pbrShader.uniform1i('prefilterMap', 1);
 pbrShader.uniform1i('brdfLUT', 2);
-pbrShader.uniform3fv('albedo', new Float32Array([0.5, 0.0, 0.0]));
+pbrShader.uniform3fv('albedo', new Float32Array([0.0, 0.0, 0.0]));
+// pbrShader.uniform3fv('albedo', new Float32Array([1.0, 1.0, 1.0]));
 pbrShader.uniform1f('ao', 1.0);
 
 for (let i = 0, size = lightPositions.length; i < size; i++) {
@@ -101,7 +122,7 @@ const dragonMesh: ObjMesh = new ObjMesh(gl, './models/TheStanfordDragon.obj', []
 const lujiazui: ObjMesh = new ObjMesh(gl, './models/Tencent_BinHai.obj');
 
 const myHDR = new HDRImage();
-myHDR.src = './hdr/Mans_Outside_2k.hdr';
+myHDR.src = './hdr/Mans_Outside_1080.hdr';
 // myHDR.src = './hdr/Milkyway_small222.hdr';
 
 myHDR.onload = function() {
@@ -293,10 +314,10 @@ myHDR.onload = function() {
         pbrShader.uniformMatrix4fv('model', model);
         // drawCubeSmooth(gl);
         // drawCube(gl);
-        // renderSphere(gl);
+        renderSphere(gl);
         // mat4.translate(model, model, [5, 0, 0]);
         // pbrShader.uniformMatrix4fv('model', model);
-        dragonMesh.draw();
+        // dragonMesh.draw();
 
         // lujiazui.draw();
 
