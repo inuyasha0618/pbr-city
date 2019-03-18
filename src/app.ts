@@ -25,7 +25,7 @@ class UIcontroller {
     roughness: number = 0.01;
     mainBuildingScale: number = 1.0;
     mainBuildingMetallic: number = 0.9;
-    fogBegin: number = 14.0;
+    fogBegin: number = 33.0;
     fogEnd: number = 71.0;
 }
 const ctrl = new UIcontroller();
