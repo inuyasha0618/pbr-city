@@ -455,7 +455,7 @@ myHDR.onload = function() {
 
 const gridCnts: number = 60;
 const paddingCnts: number = 100;
-const gridSize: number = 1;
+const gridSize: number = 1.5;
 const buildingPoses: Array<mat4> = [];
 function getRandom(start: number, end: number): number {
     return start + (end - start) * Math.random();
