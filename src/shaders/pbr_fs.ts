@@ -161,7 +161,6 @@ void main()
     // float fogFactor = 1.0;
     color = mix(uFogColor, color, fogFactor);
     FragColor = vec4(color , 1.0);
-    // FragColor = vec4(vec3(kD) , 1.0);
 }
 `.trim();
 

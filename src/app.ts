@@ -2,7 +2,7 @@ import { mat4, vec3 } from 'gl-matrix'
 import * as dat from 'dat.gui';
 import RenderLooper from 'render-looper';
 import { ShaderProgram, drawCube, drawCubeSmooth, OrbitCamera, drawQuad, drawQuadWithTex, renderSphere, ObjMesh } from './gl-helpers/index';
-import { getContext, resizeCvs2Screen, getRadian } from './utils/index';
+import { getContext, resizeCvs2Screen, getRadian, color2fract } from './utils/index';
 import background_vs from './shaders/background_vs';
 import background_fs from './shaders/background_fs';
 import brdf_vs from './shaders/brdf_vs';
@@ -21,22 +21,52 @@ import calc_tex_vs from './shaders/calc_tex_vs';
 import calc_tex_fs from './shaders/calc_tex_fs';
 import river from './river2';
 
-class UIcontroller {
+class MaterialCtrl {
     roughness: number = 0.01;
-    mainBuildingScale: number = 1.0;
-    mainBuildingMetallic: number = 0.9;
-    fogBegin: number = 33.0;
-    fogEnd: number = 112.0;
+    scale: number = 1.0;
+    metallic: number = 0.9;
+
+    constructor(roughness: number = 0.01, metallic: number = 0.9) {
+        this.roughness = roughness;
+        this.metallic = metallic;
+    }
 }
-const ctrl = new UIcontroller();
+const mainBuildingCtrl = new MaterialCtrl();
+const surroundingCtrl = new MaterialCtrl();
+const groundCtrl = new MaterialCtrl(0.3, 0.5);
+
+const totalCtrl = {
+    fogBegin: 33.0,
+    fogEnd: 112.0
+}
+
+const palette = {
+    buildingColor: [ 0.9 * 255, 0.0, 0.0 ], // RGB array
+    groundColor: [ 0.9 * 255, 0.9 * 255, 0.9 * 255 ], // RGB array
+};
 
 window.onload = function() {
     const gui = new dat.GUI();
-    gui.add(ctrl, 'roughness', 0.0, 1.0);
-    gui.add(ctrl, 'mainBuildingScale', 1.0, 15.0);
-    gui.add(ctrl, 'mainBuildingMetallic', 0.0, 1.0);
-    gui.add(ctrl, 'fogBegin', 10.0, 100.0);
-    gui.add(ctrl, 'fogEnd', 70.0, 120.0);
+
+    const main = gui.addFolder('main building');
+    main.add(mainBuildingCtrl, 'roughness', 0.0, 1.0);
+    main.add(mainBuildingCtrl, 'scale', 1.0, 15.0);
+    main.add(mainBuildingCtrl, 'metallic', 0.0, 1.0);
+
+    const surrounding = gui.addFolder('surrounding buildings');
+    surrounding.add(surroundingCtrl, 'roughness', 0.0, 1.0);
+    surrounding.add(surroundingCtrl, 'metallic', 0.0, 1.0);
+
+    const ground = gui.addFolder('ground');
+    ground.add(groundCtrl, 'roughness', 0.0, 1.0);
+    ground.add(groundCtrl, 'metallic', 0.0, 1.0);
+
+    gui.add(totalCtrl, 'fogBegin', 10.0, 100.0);
+    gui.add(totalCtrl, 'fogEnd', 70.0, 120.0);
+
+
+    gui.addColor(palette, 'buildingColor');
+    gui.addColor(palette, 'groundColor');
 };
 
 const lightPositions: Array<Float32Array> = [
@@ -107,8 +137,6 @@ pbrShader.use();
 pbrShader.uniform1i('irradianceMap', 0);
 pbrShader.uniform1i('prefilterMap', 1);
 pbrShader.uniform1i('brdfLUT', 2);
-pbrShader.uniform3fv('albedo', new Float32Array([0.9, 0.0, 0.0]));
-// pbrShader.uniform3fv('albedo', new Float32Array([1.0, 1.0, 1.0]));
 pbrShader.uniform1f('ao', 1.0);
 
 for (let i = 0, size = lightPositions.length; i < size; i++) {
@@ -121,7 +149,6 @@ pbrInstancedShader.uniform1i('irradianceMap', 0);
 pbrInstancedShader.uniform1i('prefilterMap', 1);
 pbrInstancedShader.uniform1i('brdfLUT', 2);
 pbrInstancedShader.uniform1i('tex', 3);
-// pbrInstancedShader.uniform3fv('albedo', new Float32Array([0.5, 0.0, 0.0]));
 pbrInstancedShader.uniform1f('ao', 1.0);
 
 for (let i = 0, size = lightPositions.length; i < size; i++) {
@@ -149,7 +176,7 @@ const lujiazui: ObjMesh = new ObjMesh(gl, './models/shanghai_WEB.obj');
 const myHDR = new HDRImage();
 // myHDR.src = './hdr/Mans_Outside_1080.hdr';
 // myHDR.src = './hdr/5TH_AVENUE.hdr';
-myHDR.src = './hdr/Milkyway_small.hdr';
+myHDR.src = './hdr/Milkyway_small222.hdr';
 // myHDR.src = './hdr/newport_loft.hdr';
 
 myHDR.onload = function() {
@@ -345,13 +372,12 @@ myHDR.onload = function() {
         gl.bindTexture(gl.TEXTURE_2D, brdfLUTTexture);
 
         const model: mat4 = mat4.create();
-        // mat4.translate(model, model, [1.0, 1.0, 1.0]);
-        mat4.scale(model, model, [ctrl.mainBuildingScale, ctrl.mainBuildingScale, ctrl.mainBuildingScale])
-        pbrShader.uniform1f('metallic', ctrl.mainBuildingMetallic);
-        pbrShader.uniform1f('roughness', ctrl.roughness);
+        mat4.scale(model, model, [mainBuildingCtrl.scale, mainBuildingCtrl.scale, mainBuildingCtrl.scale])
+        pbrShader.uniform1f('metallic', mainBuildingCtrl.metallic);
+        pbrShader.uniform1f('roughness', mainBuildingCtrl.roughness);
         pbrShader.uniformMatrix4fv('model', model);
-        pbrShader.uniform3fv('albedo', new Float32Array([0.7, 0.0, 0.0]));
-        pbrShader.uniform2f('uFogDist', ctrl.fogBegin, ctrl.fogEnd);
+        pbrShader.uniform3fv('albedo', color2fract(palette.buildingColor));
+        pbrShader.uniform2f('uFogDist', totalCtrl.fogBegin, totalCtrl.fogEnd);
         pbrShader.uniform3fv('uFogColor', new Float32Array([0.0, 0.0, 0.0]));
         // drawCubeSmooth(gl);
         // drawCube(gl);
@@ -392,25 +418,24 @@ myHDR.onload = function() {
         pbrInstancedShader.uniformMatrix4fv('view', view);
         pbrInstancedShader.uniformMatrix4fv('projection', perspective);
         pbrInstancedShader.uniform3fv('camPos', camPos);
-        pbrInstancedShader.uniform1f('metallic', ctrl.mainBuildingMetallic);
-        pbrInstancedShader.uniform1f('roughness', ctrl.roughness);
-        pbrInstancedShader.uniform3fv('albedo', new Float32Array([0.6, 0.6, 0.6]));
-        pbrInstancedShader.uniform2f('uFogDist', ctrl.fogBegin, ctrl.fogEnd);
-        pbrInstancedShader.uniform3fv('uFogColor', new Float32Array([0.0, 0.0, 0.0]));
+        pbrInstancedShader.uniform1f('metallic', surroundingCtrl.metallic);
+        pbrInstancedShader.uniform1f('roughness', surroundingCtrl.roughness);
+        pbrInstancedShader.uniform3fv('albedo', color2fract(palette.buildingColor));
+        pbrInstancedShader.uniform2f('uFogDist', totalCtrl.fogBegin, totalCtrl.fogEnd);
+        pbrInstancedShader.uniform3fv('uFogColor', new Float32Array([0.2, 0.2, 0.2]));
 
-        // gl.activeTexture(gl.TEXTURE3);
-        // gl.bindTexture(gl.TEXTURE_2D, proceduralTex);
         drawFakeBuildings();
-        // gl.bindTexture(gl.TEXTURE_2D, null);
 
         pbrShader.use();
+
+        pbrShader.uniform2f('uFogDist', 100000, 1000000);
         const groundModel: mat4 = mat4.create();
         mat4.rotateX(groundModel, groundModel, getRadian(-90));
         mat4.scale(groundModel, groundModel, [1000.0, 1000.0, 1000.0]);
         pbrShader.uniformMatrix4fv('model', groundModel);
-        pbrShader.uniform1f('roughness', 0.8);
-        pbrShader.uniform1f('metallic', 0.2);
-        pbrShader.uniform3fv('albedo', new Float32Array([0.1, 0.1, 0.1]));
+        pbrShader.uniform1f('roughness', groundCtrl.roughness);
+        pbrShader.uniform1f('metallic', groundCtrl.metallic);
+        pbrShader.uniform3fv('albedo', color2fract(palette.groundColor));
 
         drawQuad(gl);
 
