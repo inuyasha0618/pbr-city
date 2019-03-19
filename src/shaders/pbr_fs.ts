@@ -159,7 +159,8 @@ void main()
 
     float fogFactor = clamp((uFogDist.y - distFromView) / (uFogDist.y - uFogDist.x), 0.0, 1.0);
     // float fogFactor = 1.0;
-    color = mix(uFogColor, color, fogFactor);
+    // color = mix(uFogColor, color, fogFactor);
+    color = mix(color * 0.1, color, fogFactor);
     FragColor = vec4(color , 1.0);
 }
 `.trim();

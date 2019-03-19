@@ -41,7 +41,7 @@ const totalCtrl = {
 }
 
 const palette = {
-    buildingColor: [ 0.9 * 255, 0.0, 0.0 ], // RGB array
+    buildingColor: [ 21, 98, 53 ], // RGB array
     groundColor: [ 0.9 * 255, 0.9 * 255, 0.9 * 255 ], // RGB array
 };
 
@@ -428,7 +428,7 @@ myHDR.onload = function() {
 
         pbrShader.use();
 
-        pbrShader.uniform2f('uFogDist', 100000, 1000000);
+        // pbrShader.uniform2f('uFogDist', 100000, 1000000);
         const groundModel: mat4 = mat4.create();
         mat4.rotateX(groundModel, groundModel, getRadian(-90));
         mat4.scale(groundModel, groundModel, [1000.0, 1000.0, 1000.0]);
