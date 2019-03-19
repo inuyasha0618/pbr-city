@@ -31,13 +31,13 @@ class MaterialCtrl {
         this.metallic = metallic;
     }
 }
-const mainBuildingCtrl = new MaterialCtrl();
-const surroundingCtrl = new MaterialCtrl();
+const mainBuildingCtrl = new MaterialCtrl(0.17);
+const surroundingCtrl = new MaterialCtrl(0.1);
 const groundCtrl = new MaterialCtrl(0.83, 0.8);
 
 const totalCtrl = {
-    fogBegin: 33.0,
-    fogEnd: 112.0
+    fogBegin: 100.0,
+    fogEnd: 160.0
 }
 
 const palette = {
@@ -61,8 +61,8 @@ window.onload = function() {
     ground.add(groundCtrl, 'roughness', 0.0, 1.0);
     ground.add(groundCtrl, 'metallic', 0.0, 1.0);
 
-    gui.add(totalCtrl, 'fogBegin', 10.0, 100.0);
-    gui.add(totalCtrl, 'fogEnd', 70.0, 120.0);
+    gui.add(totalCtrl, 'fogBegin', 90.0, 100.0);
+    gui.add(totalCtrl, 'fogEnd', 110.0, 200.0);
 
 
     gui.addColor(palette, 'buildingColor');
@@ -354,7 +354,7 @@ myHDR.onload = function() {
     window.camera = camera;
     function drawCB(): void {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        camera.addYaw(0.2);
+        // camera.addYaw(0.2);
         const view: mat4 = camera.getViewMatrix();
         const perspective: mat4 = camera.getPerspectiveMatrix();
         // const camPos: vec3 = camera.getPosition();
