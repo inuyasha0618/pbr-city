@@ -46,6 +46,7 @@ const palette = {
 };
 
 let auto: boolean = false;
+let rot: boolean = true;
 
 window.onload = function() {
     const gui = new dat.GUI();
@@ -77,6 +78,16 @@ window.onload = function() {
             btn.innerHTML = 'stop change color'
         } else {
             btn.innerHTML = 'start change color'
+        }
+    }, false);
+
+    const btn2: HTMLDivElement = document.querySelector('#btn2');
+    btn2.addEventListener('click', function() {
+        rot = !rot;
+        if (rot) {
+            btn2.innerHTML = 'stop rotate';
+        } else {
+            btn2.innerHTML = 'start rotate';
         }
     }, false);
 };
@@ -374,7 +385,9 @@ myHDR.onload = function() {
         }
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        camera.addYaw(0.2);
+        if (rot) {
+            camera.addYaw(0.2);
+        }
         const view: mat4 = camera.getViewMatrix();
         const perspective: mat4 = camera.getPerspectiveMatrix();
         // const camPos: vec3 = camera.getPosition();
@@ -392,7 +405,8 @@ myHDR.onload = function() {
         gl.bindTexture(gl.TEXTURE_2D, brdfLUTTexture);
 
         const model: mat4 = mat4.create();
-        mat4.scale(model, model, [mainBuildingCtrl.scale, mainBuildingCtrl.scale, mainBuildingCtrl.scale])
+        mat4.scale(model, model, [mainBuildingCtrl.scale, mainBuildingCtrl.scale, mainBuildingCtrl.scale]);
+        mat4.translate(model, model, [0, 0.01, 0.0]);
         pbrShader.uniform1f('metallic', mainBuildingCtrl.metallic);
         pbrShader.uniform1f('roughness', mainBuildingCtrl.roughness);
         pbrShader.uniformMatrix4fv('model', model);
