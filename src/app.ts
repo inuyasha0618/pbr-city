@@ -45,6 +45,8 @@ const palette = {
     groundColor: [ 15, 14, 14 ], // RGB array
 };
 
+let auto: boolean = false;
+
 window.onload = function() {
     const gui = new dat.GUI();
 
@@ -65,8 +67,18 @@ window.onload = function() {
     gui.add(totalCtrl, 'fogEnd', 110.0, 200.0);
 
 
-    gui.addColor(palette, 'buildingColor');
-    gui.addColor(palette, 'groundColor');
+    gui.addColor(palette, 'buildingColor').listen();
+    gui.addColor(palette, 'groundColor').listen();
+
+    const btn: HTMLDivElement = document.querySelector('#btn');
+    btn.addEventListener('click', function() {
+        auto = !auto;
+        if (auto) {
+            btn.innerHTML = 'stop change color'
+        } else {
+            btn.innerHTML = 'start change color'
+        }
+    }, false);
 };
 
 const lightPositions: Array<Float32Array> = [
@@ -352,9 +364,17 @@ myHDR.onload = function() {
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
     const camera: OrbitCamera = new OrbitCamera(gl, 23, 264, -22, SCR_WIDTH / SCR_HEIGHT, 1.0, 1000.0);
     window.camera = camera;
-    function drawCB(): void {
+    function drawCB(msDt: number, msTotal: number): void {
+        if (auto) {
+            palette.buildingColor = [
+                (Math.sin(getRadian(3.45 * msTotal * 0.005)) * 0.5 + 0.5) * 255,
+                (Math.sin(getRadian(6.56 * msTotal * 0.005)) * 0.5 + 0.5) * 255,
+                (Math.sin(getRadian(8.78 * msTotal * 0.005)) * 0.5 + 0.5) * 255,
+            ]
+        }
+
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        // camera.addYaw(0.2);
+        camera.addYaw(0.2);
         const view: mat4 = camera.getViewMatrix();
         const perspective: mat4 = camera.getPerspectiveMatrix();
         // const camPos: vec3 = camera.getPosition();
@@ -461,6 +481,8 @@ function getRandom(start: number, end: number): number {
     return start + (end - start) * Math.random();
 }
 
+const buildingBaseModel: mat4 = mat4.create();
+
 const beginDist: number = 5;
 const endDist: number = 50;
 
@@ -487,19 +509,21 @@ function generateBuildingPos(gridSize: number, gridCnts: number) {
             // if (row >= discard -2 && row <= discard && column >= discard - 2 && column <= discard) continue;
             const localMx: mat4 = mat4.create();
             mat4.translate(localMx, localMx, [column * gridSize + 0.5 * gridSize, 0.0, row * gridSize + 0.5 * gridSize]);
-            // mat4.rotateX(localMx, localMx, getRadian(-90));
             mat4.rotateY(localMx, localMx, getRadian(60 * Math.random()));
             mat4.scale(localMx, localMx, [0.5 * gridSize, 0.5 * gridSize, 0.5 * gridSize]);
             const scaleX: number = Math.random()*Math.random()*Math.random()*Math.random() * 0.5 + 0.5;
             const scaleY: number = (Math.random() * Math.random()) * 8 + 0.5;
             const scaleZ = getRandom(0.4, 1.0);
-            // mat4.scale(localMx, localMx, [getRandom(0.3, 0.5), getRandom(0.5, 1.5), getRandom(0.4, 0.6)]);
             mat4.scale(localMx, localMx, [scaleX, scaleY, scaleZ]);
             const finalModelMx: mat4 = mat4.create();
             mat4.multiply(finalModelMx, w2Checkerboard, localMx);
             buildingPoses.push(finalModelMx);
         }
-    }    
+    }
+    
+    mat4.translate(buildingBaseModel, w2Checkerboard, [
+        20 * gridSize + 0.5 * gridSize, 0.0, 37 * gridSize + 0.5 * gridSize
+    ])
 }
 
 function clamp(x: number, min: number, max: number): number {

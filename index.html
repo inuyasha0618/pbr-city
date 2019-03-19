@@ -18,10 +18,23 @@
         canvas {
             outline: 1px gold solid;
         }
+
+        #btn {
+            position: fixed;
+            left: 0;
+            top: 0;
+            /* width: 100px; */
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            line-height: 50px;
+            cursor: pointer;
+        }
     </style>
     <script src="./hdrpng.min.js"></script>
 </head>
 <body>
+    <div id="btn">start change color</div>
     <canvas id='cvs' width="1600" height="800"></canvas>
     <script src="./dist/bundle.js"></script>
 </body>
