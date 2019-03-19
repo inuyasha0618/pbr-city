@@ -33,7 +33,7 @@ class MaterialCtrl {
 }
 const mainBuildingCtrl = new MaterialCtrl();
 const surroundingCtrl = new MaterialCtrl();
-const groundCtrl = new MaterialCtrl(0.3, 0.5);
+const groundCtrl = new MaterialCtrl(0.83, 0.8);
 
 const totalCtrl = {
     fogBegin: 33.0,
@@ -42,7 +42,7 @@ const totalCtrl = {
 
 const palette = {
     buildingColor: [ 21, 98, 53 ], // RGB array
-    groundColor: [ 0.9 * 255, 0.9 * 255, 0.9 * 255 ], // RGB array
+    groundColor: [ 10, 27, 3 ], // RGB array
 };
 
 window.onload = function() {

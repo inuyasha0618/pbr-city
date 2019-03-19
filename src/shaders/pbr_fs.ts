@@ -5,7 +5,8 @@ out vec4 FragColor;
 in vec2 TexCoords;
 in vec3 WorldPos;
 in vec3 Normal;
-in float distFromView;
+// in float distFromView;
+in vec3 posInView;
 
 // material parameters
 uniform vec3 albedo;
@@ -75,6 +76,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 // ----------------------------------------------------------------------------
 void main()
 {		
+    float distFromView = length(camPos - posInView);
     vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
     vec3 R = normalize(reflect(-V, N)); 

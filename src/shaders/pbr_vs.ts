@@ -6,7 +6,8 @@ layout (location = 2) in vec2 aTexCoords;
 
 out vec2 TexCoords;
 out vec3 WorldPos;
-out float distFromView;
+out vec3 posInView;
+// out float distFromView;
 out vec3 Normal;
 
 uniform mat4 projection;
@@ -18,7 +19,8 @@ void main()
     TexCoords = aTexCoords;
     WorldPos = vec3(model * vec4(aPos, 1.0));
     vec3 viewPos = vec3(view * vec4(WorldPos, 1.0));
-    distFromView = length(viewPos);
+    posInView = viewPos;
+    // distFromView = length(viewPos);
     Normal = mat3(model) * aNormal;   
     gl_Position =  projection * view * vec4(WorldPos, 1.0);
 }
