@@ -41,8 +41,8 @@ const totalCtrl = {
 }
 
 const palette = {
-    buildingColor: [ 21, 98, 53 ], // RGB array
-    groundColor: [ 10, 27, 3 ], // RGB array
+    buildingColor: [ 44, 202, 223 ], // RGB array
+    groundColor: [ 15, 14, 14 ], // RGB array
 };
 
 window.onload = function() {
