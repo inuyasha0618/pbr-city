@@ -444,7 +444,7 @@ myHDR.onload = function() {
         //     }
         // }
 
-
+        gl.enable(gl.CULL_FACE);
 
         lujiazui.draw();
 
@@ -459,6 +459,9 @@ myHDR.onload = function() {
         pbrInstancedShader.uniform3fv('uFogColor', new Float32Array([0.2, 0.2, 0.2]));
 
         drawFakeBuildings();
+
+        gl.disable(gl.CULL_FACE);
+
 
         pbrShader.use();
 
